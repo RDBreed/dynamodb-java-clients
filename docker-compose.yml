@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  localstack:
+    build: ./cdk
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=dynamodb,sns,sqs,serverless
+      - DEFAULT_REGION=eu-west-1
+      - AWS_ACCESS_KEY_ID=key
+      - AWS_SECRET_ACCESS_KEY=secret
+    volumes:
+      - ./local-persistence-stack.sh:/docker-entrypoint-initaws.d/local-persistence-stack.sh
+      - ./cdk:/cdk
