@@ -34,7 +34,7 @@ import static eu.luminis.breed.dynamodbmigration.user.model.Gender.FEMALE;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class UserAsyncRepositoryDynamoDBImplTest extends TestUtil {
+class UserAsyncRepositoryDynamoDBImplIT extends TestUtil {
 
     @ParameterizedTest
     @ArgumentsSource(RepositoryProvider.class)
@@ -156,13 +156,6 @@ class UserAsyncRepositoryDynamoDBImplTest extends TestUtil {
         attributeValueMap.put(IS_ADMIN_FIELD, new AttributeValue().withBOOL(true));
         amazonDynamoDBClient.putItem(tableName, attributeValueMap);
         return id;
-    }
-
-    private Function<Map<String, AttributeValue>, Object> getValue(String fieldName, Function<AttributeValue, Object> attributeGetter) {
-        return stringAttributeValueMap -> {
-            final AttributeValue attributeValue = stringAttributeValueMap.get(fieldName);
-            return attributeGetter.apply(attributeValue);
-        };
     }
 
     static class RepositoryProvider implements ArgumentsProvider {

@@ -26,7 +26,7 @@ import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-class UserRepositoryDynamoDBImplTest extends TestUtil {
+class UserRepositoryDynamoDBImplIT extends TestUtil {
 
     @ParameterizedTest
     @ArgumentsSource(RepositoryProvider.class)

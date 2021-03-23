@@ -34,7 +34,7 @@ public class TestUtil {
         try {
             final Properties properties = getAllProperties();
             final Boolean isTestContainersEnabled = Boolean.valueOf(String.valueOf(properties.getOrDefault("testcontainers.enabled", "true")));
-            if(isTestContainersEnabled) {
+            if (isTestContainersEnabled) {
                 createTestContainersSetup();
             } else {
                 region = properties.getProperty("aws.region");
@@ -44,7 +44,7 @@ public class TestUtil {
                         .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(key, secret)))
                         .build();
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -76,7 +76,7 @@ public class TestUtil {
      * TestContainers does not seem to like that at the moment combined with docker-compose...
      */
     @BeforeAll
-    static void waitForDynamoDBTable(){
+    static void waitForDynamoDBTable() {
         log.info("Waiting on table creation");
         final Waiter<DescribeTableRequest> waiter = amazonDynamoDBClient.waiters().tableExists();
         try {
