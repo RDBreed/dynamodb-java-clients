@@ -25,10 +25,17 @@ public class UserAsyncRepositoryDynamoDBSDK1HighLevelImpl implements UserAsyncRe
     private final DynamoDBMapper dynamoDBMapper;
     private final String tableName;
 
-    public UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(String tableName, String serviceEndpoint, String region, String accessKey, String secretKey) {
+    public UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(String tableName){
+        final AmazonDynamoDB amazonDynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+        this.tableName = tableName;
+        this.dynamoDBMapper = new DynamoDBMapper(amazonDynamoDBClient, DynamoDBMapperConfig.builder()
+                .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(this.tableName))
+                .build());
+    }
+
+    public UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(String tableName, String serviceEndpoint) {
         final AmazonDynamoDB amazonDynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, region))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, null))
                 .build();
         this.tableName = tableName;
         this.dynamoDBMapper = new DynamoDBMapper(amazonDynamoDBClient, DynamoDBMapperConfig.builder()

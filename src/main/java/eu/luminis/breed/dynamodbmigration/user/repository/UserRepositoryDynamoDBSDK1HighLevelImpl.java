@@ -1,7 +1,5 @@
 package eu.luminis.breed.dynamodbmigration.user.repository;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -26,15 +24,27 @@ public class UserRepositoryDynamoDBSDK1HighLevelImpl implements UserRepository {
     private final DynamoDBMapper dynamoDBMapper;
     private final String tableName;
 
-    public UserRepositoryDynamoDBSDK1HighLevelImpl(String tableName, String serviceEndpoint, String region, String accessKey, String secretKey) {
+    public UserRepositoryDynamoDBSDK1HighLevelImpl(String tableName) {
+        this.tableName = tableName;
+        this.dynamoDBMapper = new DynamoDBMapper(
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                DynamoDBMapperConfig
+                        .builder()
+                        .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(this.tableName))
+                        .build());
+    }
+
+    public UserRepositoryDynamoDBSDK1HighLevelImpl(String tableName, String serviceEndpoint) {
         final AmazonDynamoDB amazonDynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, region))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, null))
                 .build();
         this.tableName = tableName;
-        this.dynamoDBMapper = new DynamoDBMapper(amazonDynamoDBClient, DynamoDBMapperConfig.builder()
-                .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(this.tableName))
-                .build());
+        this.dynamoDBMapper = new DynamoDBMapper(
+                amazonDynamoDBClient,
+                DynamoDBMapperConfig
+                        .builder()
+                        .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(this.tableName))
+                        .build());
     }
 
 

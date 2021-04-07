@@ -35,12 +35,15 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
     private final AmazonDynamoDB amazonDynamoDBClient;
     private final String tableName;
 
-    public UserRepositoryDynamoDBSDK1LowLevelImpl(String tableName, String serviceEndpoint, String signingRegion, String accessKey,
-                                                  String secretKey) {
+    public UserRepositoryDynamoDBSDK1LowLevelImpl(String tableName){
+        this.tableName = tableName;
+        this.amazonDynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+    }
+
+    public UserRepositoryDynamoDBSDK1LowLevelImpl(String tableName, String serviceEndpoint) {
         this.tableName = tableName;
         this.amazonDynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, null))
                 .build();
     }
 

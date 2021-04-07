@@ -35,10 +35,13 @@ public class UserRepositoryDynamoDBSDK2LowLevelImpl implements UserRepository {
     private final DynamoDbClient dynamoDbClient;
     private final String tableName;
 
-    public UserRepositoryDynamoDBSDK2LowLevelImpl(String tableName, String endpoint, String region, String key, String secret) {
+    public UserRepositoryDynamoDBSDK2LowLevelImpl(String tableName) {
+        this.tableName = tableName;
+        this.dynamoDbClient = DynamoDbClient.create();
+    }
+
+    public UserRepositoryDynamoDBSDK2LowLevelImpl(String tableName, String endpoint) {
         this.dynamoDbClient = DynamoDbClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(key, secret)))
                 .endpointOverride(URI.create(endpoint))
                 .build();
         this.tableName = tableName;

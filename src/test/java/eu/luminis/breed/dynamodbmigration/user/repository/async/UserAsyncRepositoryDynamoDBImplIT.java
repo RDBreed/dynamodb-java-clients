@@ -162,10 +162,10 @@ class UserAsyncRepositoryDynamoDBImplIT extends TestUtil {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    new UserAsyncRepositoryDynamoDBSDK1LowLevelImpl(tableName, endpoint, region, key, secret),
-                    new UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(tableName, endpoint, region, key, secret),
-                    new UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(tableName, endpoint, region, key, secret),
-                    new UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(tableName, endpoint, region, key, secret)
+                    new UserAsyncRepositoryDynamoDBSDK1LowLevelImpl(tableName, endpoint),
+                    new UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(tableName, endpoint),
+                    new UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(tableName, endpoint),
+                    new UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(tableName, endpoint)
             ).map(Arguments::of);
         }
     }

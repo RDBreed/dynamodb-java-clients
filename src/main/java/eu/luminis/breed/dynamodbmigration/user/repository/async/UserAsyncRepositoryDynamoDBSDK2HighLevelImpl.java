@@ -30,10 +30,14 @@ public class UserAsyncRepositoryDynamoDBSDK2HighLevelImpl implements UserAsyncRe
     private final DynamoDbAsyncTable<User> userDynamoDbAsyncTable;
     private final DynamoDbAsyncIndex<User> userDynamoDbAsyncIndex;
 
-    public UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(String tableName, String endpoint, String region, String key, String secret) {
+    public UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(String tableName){
+        DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.create();
+        userDynamoDbAsyncTable = dynamoDbEnhancedAsyncClient.table(tableName, TableSchema.fromBean(User.class));
+        userDynamoDbAsyncIndex = userDynamoDbAsyncTable.index("lastNameIndex");
+    }
+
+    public UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(String tableName, String endpoint) {
         final DynamoDbAsyncClient dynamoDbClient = DynamoDbAsyncClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(key, secret)))
                 .endpointOverride(URI.create(endpoint))
                 .build();
         DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.builder()

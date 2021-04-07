@@ -5,6 +5,8 @@ import java.util.Arrays;
 
 public class UserException extends RuntimeException {
 
+    private final boolean isClientError;
+
     public static UserException error(String message, Object... args) {
         Object[] replacingObjects;
         if (lastReplacementIsThrowable(args)) {
@@ -15,16 +17,38 @@ public class UserException extends RuntimeException {
         }
     }
 
+    public static UserException clientError(String message, Object... args) {
+        Object[] replacingObjects;
+        if (lastReplacementIsThrowable(args)) {
+            replacingObjects = Arrays.copyOf(args, getLastIndex(args));
+            return new UserException(formatString(message, replacingObjects), (Throwable) getLastReplacement(args), true);
+        } else {
+            return new UserException(formatString(message, args), true);
+        }
+    }
+
     public static UserException errorIdIsNull(){
         return new UserException("Id of user may not be null");
     }
 
     private UserException(String message) {
         super(message);
+        isClientError = false;
     }
 
-    public UserException(String message, Throwable cause) {
+    private UserException(String message, boolean isClientError) {
+        super(message);
+        this.isClientError = isClientError;
+    }
+
+    private UserException(String message, Throwable cause) {
         super(message, cause);
+        isClientError = false;
+    }
+
+    private UserException(String formatString, Throwable throwable, boolean isClientError) {
+        super(formatString, throwable);
+        this.isClientError = isClientError;
     }
 
     private static String formatString(String originalMessage, Object... replacingObjects) {

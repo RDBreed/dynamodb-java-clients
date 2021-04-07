@@ -143,10 +143,10 @@ class UserRepositoryDynamoDBImplIT extends TestUtil {
         @Override
         public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
             return Stream.of(
-                    new UserRepositoryDynamoDBSDK1LowLevelImpl(tableName, endpoint, region, key, secret),
-                    new UserRepositoryDynamoDBSDK1HighLevelImpl(tableName, endpoint, region, key, secret),
-                    new UserRepositoryDynamoDBSDK2LowLevelImpl(tableName, endpoint, region, key, secret),
-                    new UserRepositoryDynamoDBSDK2HighLevelImpl(tableName, endpoint, region, key, secret)
+                    new UserRepositoryDynamoDBSDK1LowLevelImpl(tableName, endpoint),
+                    new UserRepositoryDynamoDBSDK1HighLevelImpl(tableName, endpoint),
+                    new UserRepositoryDynamoDBSDK2LowLevelImpl(tableName, endpoint),
+                    new UserRepositoryDynamoDBSDK2HighLevelImpl(tableName, endpoint)
             ).map(Arguments::of);
         }
     }

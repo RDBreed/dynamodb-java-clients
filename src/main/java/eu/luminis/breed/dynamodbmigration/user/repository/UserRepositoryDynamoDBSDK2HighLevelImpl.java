@@ -32,10 +32,15 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
     private final DynamoDbTable<User> userDynamoDbTable;
     private final DynamoDbIndex<User> userDynamoDbIndex;
 
-    public UserRepositoryDynamoDBSDK2HighLevelImpl(String tableName, String endpoint, String region, String key, String secret) {
+    public UserRepositoryDynamoDBSDK2HighLevelImpl(String tableName) {
+        dynamoDbEnhancedClient = DynamoDbEnhancedClient.create();
+        userDynamoDbTable = dynamoDbEnhancedClient.table(tableName,
+                TableSchema.fromBean(User.class));
+        userDynamoDbIndex = userDynamoDbTable.index("lastNameIndex");
+    }
+
+    public UserRepositoryDynamoDBSDK2HighLevelImpl(String tableName, String endpoint) {
         final DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(key, secret)))
                 .endpointOverride(URI.create(endpoint))
                 .build();
         dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()

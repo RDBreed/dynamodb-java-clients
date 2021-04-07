@@ -36,12 +36,15 @@ public class UserAsyncRepositoryDynamoDBSDK1LowLevelImpl implements UserAsyncRep
     private final AmazonDynamoDB amazonDynamoDBClient;
     private final String tableName;
 
-    public UserAsyncRepositoryDynamoDBSDK1LowLevelImpl(String tableName, String serviceEndpoint, String signingRegion, String accessKey,
-                                                       String secretKey) {
+    public UserAsyncRepositoryDynamoDBSDK1LowLevelImpl(String tableName) {
+        this.tableName = tableName;
+        this.amazonDynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+    }
+
+    public UserAsyncRepositoryDynamoDBSDK1LowLevelImpl(String tableName, String serviceEndpoint) {
         this.tableName = tableName;
         this.amazonDynamoDBClient = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, signingRegion))
-                .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(accessKey, secretKey)))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, null))
                 .build();
     }
 

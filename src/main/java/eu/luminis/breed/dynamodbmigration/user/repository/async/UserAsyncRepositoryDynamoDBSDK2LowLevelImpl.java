@@ -33,10 +33,13 @@ public class UserAsyncRepositoryDynamoDBSDK2LowLevelImpl implements UserAsyncRep
     private final DynamoDbAsyncClient dynamoDbAsyncClient;
     private final String tableName;
 
-    public UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(String tableName, String endpoint, String region, String key, String secret) {
+    public UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(String tableName){
+        this.dynamoDbAsyncClient = DynamoDbAsyncClient.create();
+        this.tableName = tableName;
+    }
+
+    public UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(String tableName, String endpoint) {
         this.dynamoDbAsyncClient = DynamoDbAsyncClient.builder()
-                .region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(key, secret)))
                 .endpointOverride(URI.create(endpoint))
                 .build();
         this.tableName = tableName;
