@@ -28,12 +28,11 @@ import static eu.luminis.breed.dynamodbmigration.user.domain.highlevel.enhancedd
 @Slf4j
 public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
 
-    private final DynamoDbEnhancedClient dynamoDbEnhancedClient;
     private final DynamoDbTable<User> userDynamoDbTable;
     private final DynamoDbIndex<User> userDynamoDbIndex;
 
     public UserRepositoryDynamoDBSDK2HighLevelImpl(String tableName) {
-        dynamoDbEnhancedClient = DynamoDbEnhancedClient.create();
+        final DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.create();
         userDynamoDbTable = dynamoDbEnhancedClient.table(tableName,
                 TableSchema.fromBean(User.class));
         userDynamoDbIndex = userDynamoDbTable.index("lastNameIndex");
@@ -43,7 +42,7 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
         final DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .build();
-        dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()
+        final DynamoDbEnhancedClient dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
                 .build();
         userDynamoDbTable = dynamoDbEnhancedClient.table(tableName,
