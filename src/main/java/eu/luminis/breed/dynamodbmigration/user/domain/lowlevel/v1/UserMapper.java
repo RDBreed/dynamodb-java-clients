@@ -13,12 +13,11 @@ import eu.luminis.breed.dynamodbmigration.user.util.SafeConversionUtil;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.*;
-import static eu.luminis.breed.dynamodbmigration.user.repository.UserRepository.putInItem;
 import static eu.luminis.breed.dynamodbmigration.user.util.ObjectMapperUtil.OBJECT_MAPPER;
 import static java.util.Map.entry;
 
@@ -43,13 +42,13 @@ public class UserMapper {
         if (includeKey) {
             item.put(ID_FIELD, new AttributeValue(SafeConversionUtil.safelyConvertToString(user.getId())));
         }
-        putInItem(user.getFirstName(), getStringConsumerItem(item, FIRST_NAME_FIELD));
-        putInItem(user.getLastName(), getStringConsumerItem(item, LAST_NAME_FIELD));
-        putInItem(user.getAge(), getIntegerConsumerItem(item, AGE_FIELD));
-        putInItem(user.getAddress(), getAddressConsumerItem(item, ADDRESS_FIELD));
-        putInItem(user.getEducation(), getEducationConsumerItem(item, EDUCATION_FIELD));
-        putInItem(user.getIsAdmin(), getBooleanConsumerItem(item, IS_ADMIN_FIELD));
-        putInItem(SafeConversionUtil.safelyConvertToString(user.getGender()), getStringConsumerItem(item, GENDER_FIELD));
+        Optional.ofNullable(user.getFirstName()).ifPresent(value -> item.put(FIRST_NAME_FIELD, new AttributeValue(value)));
+        Optional.ofNullable(user.getLastName()).ifPresent(value -> item.put(LAST_NAME_FIELD, new AttributeValue(value)));
+        Optional.ofNullable(user.getAge()).ifPresent(value -> item.put(AGE_FIELD, new AttributeValue().withN(String.valueOf(value))));
+        Optional.ofNullable(user.getAddress()).ifPresent(value -> item.put(ADDRESS_FIELD, new AttributeValue().withM(safelyConvertToMap(value))));
+        Optional.ofNullable(user.getEducation()).ifPresent(value -> item.put(EDUCATION_FIELD, new AttributeValue(safelyConvertToString(value))));
+        Optional.ofNullable(user.getIsAdmin()).ifPresent(value -> item.put(IS_ADMIN_FIELD, new AttributeValue().withBOOL(value)));
+        Optional.ofNullable(user.getLastName()).ifPresent(value -> item.put(GENDER_FIELD, new AttributeValue(value)));
         return item;
     }
 
@@ -77,30 +76,13 @@ public class UserMapper {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    private static Consumer<String> getStringConsumerItem(Map<String, AttributeValue> item, String firstNameField) {
-        return value -> item.put(firstNameField, new AttributeValue(value));
-    }
-
-    private static Consumer<Integer> getIntegerConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, new AttributeValue().withN(SafeConversionUtil.safelyConvertToString(value)));
-    }
-
-    private static Consumer<Address> getAddressConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, new AttributeValue().withM(safelyConvertToMap(value)));
-    }
-
     private static Map<String, AttributeValue> safelyConvertToMap(Address address) {
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
-        putInItem(address.getStreet(), getStringConsumerItem(attributeValueMap, ADDRESS_STREET_FIELD));
-        putInItem(address.getCity(), getStringConsumerItem(attributeValueMap, ADDRESS_CITY_FIELD));
-        putInItem(address.getNumber(), number -> attributeValueMap.put(ADDRESS_NUMBER_FIELD,
-                new AttributeValue().withN(SafeConversionUtil.safelyConvertToString(number))));
-        putInItem(address.getZipCode(), getStringConsumerItem(attributeValueMap, ADDRESS_ZIPCODE_FIELD));
+        Optional.ofNullable(address.getStreet()).ifPresent(value -> attributeValueMap.put(ADDRESS_STREET_FIELD, new AttributeValue(value)));
+        Optional.ofNullable(address.getCity()).ifPresent(value -> attributeValueMap.put(ADDRESS_CITY_FIELD, new AttributeValue(value)));
+        Optional.ofNullable(address.getNumber()).ifPresent(value -> attributeValueMap.put(ADDRESS_NUMBER_FIELD, new AttributeValue().withN(String.valueOf(value))));
+        Optional.ofNullable(address.getZipCode()).ifPresent(value -> attributeValueMap.put(ADDRESS_ZIPCODE_FIELD, new AttributeValue(value)));
         return attributeValueMap;
-    }
-
-    private static Consumer<Education> getEducationConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, new AttributeValue().withS(safelyConvertToString(value)));
     }
 
     private static String safelyConvertToString(Education education) {
@@ -112,10 +94,6 @@ public class UserMapper {
             }
         }
         return null;
-    }
-
-    private static Consumer<Boolean> getBooleanConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, new AttributeValue().withBOOL(value));
     }
 
     private static Address mapToAddress(Map<String, AttributeValue> item) {

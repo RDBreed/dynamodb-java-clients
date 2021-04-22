@@ -13,14 +13,11 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.*;
-import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ADDRESS_ZIPCODE_FIELD;
-import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.EDUCATION_FIELD;
-import static eu.luminis.breed.dynamodbmigration.user.repository.UserRepository.putInItem;
 import static eu.luminis.breed.dynamodbmigration.user.util.ObjectMapperUtil.OBJECT_MAPPER;
 import static java.util.Map.entry;
 
@@ -31,16 +28,16 @@ public class UserMapper {
 
     public static Map<String, AttributeValue> mapToItem(User user, boolean includeKey) {
         Map<String, AttributeValue> item = new HashMap<>();
-        if(includeKey) {
+        if (includeKey) {
             item.put(ID_FIELD, AttributeValue.builder().s(SafeConversionUtil.safelyConvertToString(user.getId())).build());
         }
-        putInItem(user.getFirstName(), getStringConsumerItem(item, FIRST_NAME_FIELD));
-        putInItem(user.getLastName(), getStringConsumerItem(item, LAST_NAME_FIELD));
-        putInItem(user.getAge(), getIntegerConsumerItem(item, AGE_FIELD));
-        putInItem(user.getAddress(), getAddressConsumerItem(item, ADDRESS_FIELD));
-        putInItem(user.getEducation(), getEducationConsumerItem(item, EDUCATION_FIELD));
-        putInItem(user.getIsAdmin(), getBooleanConsumerItem(item, IS_ADMIN_FIELD));
-        putInItem(SafeConversionUtil.safelyConvertToString(user.getGender()), getStringConsumerItem(item, GENDER_FIELD));
+        Optional.ofNullable(user.getFirstName()).ifPresent(value -> item.put(FIRST_NAME_FIELD, AttributeValue.builder().s(value).build()));
+        Optional.ofNullable(user.getLastName()).ifPresent(value -> item.put(LAST_NAME_FIELD, AttributeValue.builder().s(value).build()));
+        Optional.ofNullable(user.getAge()).ifPresent(value -> item.put(AGE_FIELD, AttributeValue.builder().n(String.valueOf(value)).build()));
+        Optional.ofNullable(user.getAddress()).ifPresent(value -> item.put(ADDRESS_FIELD, AttributeValue.builder().m(safelyConvertToMap(value)).build()));
+        Optional.ofNullable(user.getEducation()).ifPresent(value -> item.put(EDUCATION_FIELD, AttributeValue.builder().s(safelyConvertToString(value)).build()));
+        Optional.ofNullable(user.getIsAdmin()).ifPresent(value -> item.put(IS_ADMIN_FIELD, AttributeValue.builder().bool(value).build()));
+        Optional.ofNullable(user.getGender()).ifPresent(value -> item.put(GENDER_FIELD, AttributeValue.builder().s(String.valueOf(value)).build()));
         return item;
     }
 
@@ -73,32 +70,12 @@ public class UserMapper {
                 .build();
     }
 
-    private static Consumer<String> getStringConsumerItem(Map<String, AttributeValue> item, String firstNameField) {
-        return value -> item.put(firstNameField, AttributeValue.builder().s(value).build());
-    }
-
-    private static Consumer<Integer> getIntegerConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, AttributeValue.builder().n(SafeConversionUtil.safelyConvertToString(value)).build());
-    }
-
-    private static Consumer<Boolean> getBooleanConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, AttributeValue.builder().bool(value).build());
-    }
-
-    private static Consumer<Address> getAddressConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, AttributeValue.builder().m(safelyConvertToMap(value)).build());
-    }
-
-    private static Consumer<Education> getEducationConsumerItem(Map<String, AttributeValue> item, String fieldName) {
-        return value -> item.put(fieldName, AttributeValue.builder().s(safelyConvertToString(value)).build());
-    }
-
     private static Map<String, AttributeValue> safelyConvertToMap(Address address) {
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
-        putInItem(address.getStreet(), getStringConsumerItem(attributeValueMap, "street"));
-        putInItem(address.getNumber(), number -> attributeValueMap.put("number",
-                AttributeValue.builder().n(SafeConversionUtil.safelyConvertToString(number)).build()));
-        putInItem(address.getZipCode(), getStringConsumerItem(attributeValueMap, "zipCode"));
+        Optional.ofNullable(address.getStreet()).ifPresent(value -> attributeValueMap.put(ADDRESS_STREET_FIELD, AttributeValue.builder().s(value).build()));
+        Optional.ofNullable(address.getCity()).ifPresent(value -> attributeValueMap.put(ADDRESS_CITY_FIELD, AttributeValue.builder().s(value).build()));
+        Optional.ofNullable(address.getNumber()).ifPresent(value -> attributeValueMap.put(ADDRESS_NUMBER_FIELD, AttributeValue.builder().n(String.valueOf(value)).build()));
+        Optional.ofNullable(address.getZipCode()).ifPresent(value -> attributeValueMap.put(ADDRESS_ZIPCODE_FIELD, AttributeValue.builder().s(value).build()));
         return attributeValueMap;
     }
 
@@ -108,6 +85,7 @@ public class UserMapper {
             final Map<String, AttributeValue> attributeValueM = attributeValue.m();
             return Address.builder()
                     .street(safelyConvertToString(attributeValueM.get(ADDRESS_STREET_FIELD)))
+                    .city(safelyConvertToString(attributeValueM.get(ADDRESS_CITY_FIELD)))
                     .number(safelyConvertToInteger(attributeValueM.get(ADDRESS_NUMBER_FIELD)))
                     .zipCode(safelyConvertToString(attributeValueM.get(ADDRESS_ZIPCODE_FIELD)))
                     .build();
@@ -157,7 +135,7 @@ public class UserMapper {
         return isNull(value) ? null : Gender.valueOf(value.s());
     }
 
-    private static boolean isNull(AttributeValue attributeValue){
+    private static boolean isNull(AttributeValue attributeValue) {
         return attributeValue == null || (attributeValue.nul() != null && attributeValue.nul());
     }
 }
