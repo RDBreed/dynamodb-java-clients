@@ -6,6 +6,8 @@ public final class UserFields {
     public static final String LAST_NAME_FIELD = "lastName";
     public static final String AGE_FIELD = "age";
     public static final String ADDRESS_FIELD = "address";
+    public static final String ADDRESS_COUNTRY_FIELD = "country";
+    public static final String ADDRESS_PROVINCE_FIELD = "province";
     public static final String ADDRESS_STREET_FIELD = "street";
     public static final String ADDRESS_NUMBER_FIELD = "number";
     public static final String ADDRESS_ZIPCODE_FIELD = "zipcode";

@@ -78,6 +78,8 @@ public class UserMapper {
 
     private static Map<String, AttributeValue> safelyConvertToMap(Address address) {
         Map<String, AttributeValue> attributeValueMap = new HashMap<>();
+        Optional.ofNullable(address.getCountry()).ifPresent(value -> attributeValueMap.put(ADDRESS_COUNTRY_FIELD, new AttributeValue(value)));
+        Optional.ofNullable(address.getProvince()).ifPresent(value -> attributeValueMap.put(ADDRESS_PROVINCE_FIELD, new AttributeValue(value)));
         Optional.ofNullable(address.getStreet()).ifPresent(value -> attributeValueMap.put(ADDRESS_STREET_FIELD, new AttributeValue(value)));
         Optional.ofNullable(address.getCity()).ifPresent(value -> attributeValueMap.put(ADDRESS_CITY_FIELD, new AttributeValue(value)));
         Optional.ofNullable(address.getNumber()).ifPresent(value -> attributeValueMap.put(ADDRESS_NUMBER_FIELD, new AttributeValue().withN(String.valueOf(value))));
@@ -101,8 +103,10 @@ public class UserMapper {
         if (attributeValue != null && attributeValue.getM() != null) {
             final Map<String, AttributeValue> attributeValueM = attributeValue.getM();
             return Address.builder()
+                    .country(safelyConvertToString(attributeValueM.get(ADDRESS_COUNTRY_FIELD)))
+                    .province(safelyConvertToString(attributeValueM.get(ADDRESS_PROVINCE_FIELD)))
                     .street(safelyConvertToString(attributeValueM.get(ADDRESS_STREET_FIELD)))
-                    .street(safelyConvertToString(attributeValueM.get(ADDRESS_CITY_FIELD)))
+                    .city(safelyConvertToString(attributeValueM.get(ADDRESS_CITY_FIELD)))
                     .number(safelyConvertToInteger(attributeValueM.get(ADDRESS_NUMBER_FIELD)))
                     .zipCode(safelyConvertToString(attributeValueM.get(ADDRESS_ZIPCODE_FIELD)))
                     .build();
