@@ -44,6 +44,9 @@ public class TestUtil {
                         .withCredentials(new AWSStaticCredentialsProvider(new BasicAWSCredentials(key, secret)))
                         .build();
             }
+            System.setProperty("aws.region", region);
+            System.setProperty("aws.key", key);
+            System.setProperty("aws.secret", secret);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

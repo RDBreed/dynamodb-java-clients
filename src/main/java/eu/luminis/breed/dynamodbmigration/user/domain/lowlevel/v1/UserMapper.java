@@ -48,7 +48,7 @@ public class UserMapper {
         Optional.ofNullable(user.getAddress()).ifPresent(value -> item.put(ADDRESS_FIELD, new AttributeValue().withM(safelyConvertToMap(value))));
         Optional.ofNullable(user.getEducation()).ifPresent(value -> item.put(EDUCATION_FIELD, new AttributeValue(safelyConvertToString(value))));
         Optional.ofNullable(user.getIsAdmin()).ifPresent(value -> item.put(IS_ADMIN_FIELD, new AttributeValue().withBOOL(value)));
-        Optional.ofNullable(user.getLastName()).ifPresent(value -> item.put(GENDER_FIELD, new AttributeValue(value)));
+        Optional.ofNullable(user.getGender()).ifPresent(value -> item.put(GENDER_FIELD, new AttributeValue(String.valueOf(value))));
         return item;
     }
 
