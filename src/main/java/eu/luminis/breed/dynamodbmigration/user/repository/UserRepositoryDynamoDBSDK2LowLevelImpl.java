@@ -79,7 +79,8 @@ public class UserRepositoryDynamoDBSDK2LowLevelImpl implements UserRepository {
         ScanResponse scan = dynamoDbClient.scan(ScanRequest.builder().tableName(tableName).build());
         final List<User> allUsers = scan.items().stream().map(UserMapper::mapToUser).collect(Collectors.toList());
         while (scan.hasLastEvaluatedKey()) {
-            scan = dynamoDbClient.scan(ScanRequest.builder().exclusiveStartKey(scan.lastEvaluatedKey()).build());
+            scan = dynamoDbClient.scan(ScanRequest.builder().tableName(tableName).exclusiveStartKey(scan.lastEvaluatedKey()).build());
+//            scan.items().stream().map(UserMapper::mapToUser).forEach(allUsers::add);
         }
         return allUsers;
     }
