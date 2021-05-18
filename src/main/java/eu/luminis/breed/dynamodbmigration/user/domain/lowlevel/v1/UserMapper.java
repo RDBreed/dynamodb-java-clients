@@ -1,7 +1,6 @@
 package eu.luminis.breed.dynamodbmigration.user.domain.lowlevel.v1;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.AttributeValueUpdate;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
@@ -10,6 +9,7 @@ import eu.luminis.breed.dynamodbmigration.user.model.Education;
 import eu.luminis.breed.dynamodbmigration.user.model.Gender;
 import eu.luminis.breed.dynamodbmigration.user.model.User;
 import eu.luminis.breed.dynamodbmigration.user.util.SafeConversionUtil;
+import eu.luminis.breed.dynamodbmigration.user.util.TimeMachine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -32,8 +32,11 @@ public class UserMapper {
         final UpdateItemRequest updateItemRequest = new UpdateItemRequest()
                 .withTableName(tableName)
                 .addKeyEntry(ID_FIELD, new AttributeValue(SafeConversionUtil.safelyConvertToString(user.getId())));
-        final Map<String, AttributeValueUpdate> attributeUpdates = attributeValueUpdates(user);
-        updateItemRequest.withAttributeUpdates(attributeUpdates);
+        final Map<String, AttributeValue> attributeUpdates = attributeValueUpdates(user);
+        updateItemRequest.setExpressionAttributeValues(attributeUpdates);
+        updateItemRequest.setUpdateExpression(getUpdateExpression(user));
+        //The following is easier, but deprecated (and not possible to combine with conditional expressions):
+        //updateItemRequest.withAttributeUpdates(attributeUpdates);
         return updateItemRequest;
     }
 
@@ -49,6 +52,8 @@ public class UserMapper {
         Optional.ofNullable(user.getEducation()).ifPresent(value -> item.put(EDUCATION_FIELD, new AttributeValue(safelyConvertToString(value))));
         Optional.ofNullable(user.getIsAdmin()).ifPresent(value -> item.put(IS_ADMIN_FIELD, new AttributeValue().withBOOL(value)));
         Optional.ofNullable(user.getGender()).ifPresent(value -> item.put(GENDER_FIELD, new AttributeValue(String.valueOf(value))));
+        //as this method is always used for saving/updating, always change last modified to now
+        item.put(LAST_MODIFIED_FIELD, new AttributeValue(String.valueOf(String.valueOf(TimeMachine.now()))));
         return item;
     }
 
@@ -68,12 +73,23 @@ public class UserMapper {
 
     }
 
-    private static Map<String, AttributeValueUpdate> attributeValueUpdates(User user) {
+    private static Map<String, AttributeValue> attributeValueUpdates(User user) {
         return mapToItem(user, false)
                 .entrySet()
                 .stream()
-                .map(entry -> entry(entry.getKey(), new AttributeValueUpdate().withValue(entry.getValue())))
+                .map(entry -> entry(":" + entry.getKey(), entry.getValue()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private static String getUpdateExpression(User user) {
+        final Map<String, AttributeValue> attributeUpdates = mapToItem(user, false);
+        final StringBuilder updateExpression = new StringBuilder();
+        updateExpression.append("SET ");
+        for (Map.Entry<String, AttributeValue> stringAttributeValueUpdateEntry : attributeUpdates.entrySet()) {
+            updateExpression.append(stringAttributeValueUpdateEntry.getKey()).append("=:").append(stringAttributeValueUpdateEntry.getKey()).append(", ");
+        }
+        updateExpression.deleteCharAt(updateExpression.lastIndexOf(","));
+        return updateExpression.toString();
     }
 
     private static Map<String, AttributeValue> safelyConvertToMap(Address address) {

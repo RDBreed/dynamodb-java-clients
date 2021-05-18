@@ -1,14 +1,15 @@
 package eu.luminis.breed.dynamodbmigration.user.repository;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.BatchGetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.DeleteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.KeysAndAttributes;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -19,7 +20,9 @@ import eu.luminis.breed.dynamodbmigration.user.domain.lowlevel.v1.UserMapper;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
 import eu.luminis.breed.dynamodbmigration.user.model.User;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ID_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.LAST_MODIFIED_EXPRESSION;
 
 @Slf4j
 public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
@@ -35,7 +39,7 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
     private final AmazonDynamoDB amazonDynamoDBClient;
     private final String tableName;
 
-    public UserRepositoryDynamoDBSDK1LowLevelImpl(String tableName){
+    public UserRepositoryDynamoDBSDK1LowLevelImpl(String tableName) {
         this.tableName = tableName;
         this.amazonDynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
     }
@@ -102,6 +106,24 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
     }
 
     @Override
+    public List<User> findByIds(List<UUID> ids) {
+        //limiting to 100, because that is one of batchgetitem limits defined by AWS...
+        final List<List<UUID>> chunks = ListUtils.partition(new ArrayList<>(ids), 100);
+        return chunks.stream()
+                .map(uuids -> amazonDynamoDBClient.batchGetItem(
+                        new BatchGetItemRequest(
+                                Map.of(tableName,
+                                        new KeysAndAttributes()
+                                                .withKeys(uuids.stream()
+                                                        .map(id -> Map.of(ID_FIELD, new AttributeValue(String.valueOf(id))))
+                                                        .collect(Collectors.toList()))))))
+                .flatMap(batchGetItemResult -> batchGetItemResult.getResponses().get(tableName)
+                        .stream()
+                        .map(UserMapper::mapToUser))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<User> findByLastName(final String lastName) {
         QueryRequest queryRequest = getLastNameIndexQuery(lastName);
         QueryResult result = amazonDynamoDBClient.query(queryRequest);
@@ -121,7 +143,19 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
         } catch (Exception e) {
             throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
         }
+    }
 
+    @Override
+    public void updateUserAdvanced(final User user) {
+        final UpdateItemRequest updateItemRequest = UserMapper.updateItemRequest(user, tableName);
+        updateItemRequest.withConditionExpression(LAST_MODIFIED_EXPRESSION);
+        try {
+            amazonDynamoDBClient.updateItem(updateItemRequest);
+        } catch (ConditionalCheckFailedException e) {
+            throw UserException.error("User could not be updated as the update condition failed for user with id {}", user.getId());
+        } catch (Exception e) {
+            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+        }
     }
 
     @Override

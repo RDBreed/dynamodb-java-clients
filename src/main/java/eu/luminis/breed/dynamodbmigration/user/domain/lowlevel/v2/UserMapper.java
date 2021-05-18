@@ -7,6 +7,7 @@ import eu.luminis.breed.dynamodbmigration.user.model.Education;
 import eu.luminis.breed.dynamodbmigration.user.model.Gender;
 import eu.luminis.breed.dynamodbmigration.user.model.User;
 import eu.luminis.breed.dynamodbmigration.user.util.SafeConversionUtil;
+import eu.luminis.breed.dynamodbmigration.user.util.TimeMachine;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValueUpdate;
 import software.amazon.awssdk.services.dynamodb.model.GetItemResponse;
@@ -38,6 +39,8 @@ public class UserMapper {
         Optional.ofNullable(user.getEducation()).ifPresent(value -> item.put(EDUCATION_FIELD, AttributeValue.builder().s(safelyConvertToString(value)).build()));
         Optional.ofNullable(user.getIsAdmin()).ifPresent(value -> item.put(IS_ADMIN_FIELD, AttributeValue.builder().bool(value).build()));
         Optional.ofNullable(user.getGender()).ifPresent(value -> item.put(GENDER_FIELD, AttributeValue.builder().s(String.valueOf(value)).build()));
+        //as this method is always used for saving/updating, always change last modified to now
+        item.put(LAST_MODIFIED_FIELD, AttributeValue.builder().s(String.valueOf(TimeMachine.now())).build());
         return item;
     }
 
@@ -47,6 +50,25 @@ public class UserMapper {
                 .stream()
                 .map(entry -> entry(entry.getKey(), AttributeValueUpdate.builder().value(entry.getValue()).build()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static Map<String, AttributeValue> attributeValue(User user) {
+        return mapToItem(user, false)
+                .entrySet()
+                .stream()
+                .map(entry -> entry(":" + entry.getKey(), entry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public static String getUpdateExpression(User user) {
+        final Map<String, AttributeValue> attributeUpdates = mapToItem(user, false);
+        final StringBuilder updateExpression = new StringBuilder();
+        updateExpression.append("SET ");
+        for (Map.Entry<String, AttributeValue> stringAttributeValueUpdateEntry : attributeUpdates.entrySet()) {
+            updateExpression.append(stringAttributeValueUpdateEntry.getKey()).append("=:").append(stringAttributeValueUpdateEntry.getKey()).append(", ");
+        }
+        updateExpression.deleteCharAt(updateExpression.lastIndexOf(","));
+        return updateExpression.toString();
     }
 
     public static User mapToUser(GetItemResponse response) {

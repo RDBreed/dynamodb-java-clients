@@ -16,6 +16,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @DynamoDBTable(tableName = "tableName")
@@ -33,6 +34,7 @@ public class User {
     private Education education;
     private Boolean isAdmin;
     private Gender gender;
+    private LocalDateTime lastModified;
 
     @DynamoDBHashKey
     @DynamoDBGeneratedUuid(value = DynamoDBAutoGenerateStrategy.CREATE)
@@ -46,7 +48,7 @@ public class User {
     }
 
     @DynamoDBTypeConverted(converter = EducationConverter.class)
-    public Education getEducation(){
+    public Education getEducation() {
         return education;
     }
 
@@ -66,5 +68,10 @@ public class User {
     @DynamoDBTypeConvertedEnum
     public Gender getGender() {
         return gender;
+    }
+
+    @DynamoDBTypeConverted(converter = LocalDateTimeConverter.class)
+    public LocalDateTime getLastModified() {
+        return lastModified;
     }
 }

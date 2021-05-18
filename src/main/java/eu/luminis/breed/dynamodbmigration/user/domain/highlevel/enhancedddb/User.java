@@ -5,11 +5,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import software.amazon.awssdk.enhanced.dynamodb.internal.converter.attribute.LocalDateTimeAttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConvertedBy;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @DynamoDbBean
@@ -27,6 +29,7 @@ public class User {
     private Education education;
     private Boolean isAdmin;
     private Gender gender;
+    private LocalDateTime lastModified;
 
     @DynamoDbPartitionKey
     public UUID getId() {
@@ -39,7 +42,12 @@ public class User {
     }
 
     @DynamoDbSecondaryPartitionKey(indexNames = "lastNameIndex")
-    public String getLastName(){
+    public String getLastName() {
         return lastName;
+    }
+
+    @DynamoDbConvertedBy(LocalDateTimeAttributeConverter.class)
+    public LocalDateTime getLastModified() {
+        return lastModified;
     }
 }

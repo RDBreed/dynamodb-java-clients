@@ -15,6 +15,8 @@ public final class UserFields {
     public static final String EDUCATION_FIELD = "education";
     public static final String IS_ADMIN_FIELD = "isAdmin";
     public static final String GENDER_FIELD = "gender";
+    public static final String LAST_MODIFIED_FIELD = "lastModified";
+    public static final String LAST_MODIFIED_EXPRESSION = "attribute_not_exists(lastModified) OR lastModified <= :lastModified";
 
     private UserFields() {
     }
