@@ -2,6 +2,7 @@ package eu.luminis.breed.dynamodbmigration.user.repository;
 
 import eu.luminis.breed.dynamodbmigration.user.domain.highlevel.enhancedddb.User;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
+import eu.luminis.breed.dynamodbmigration.user.exception.UserNotUpdatedException;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
@@ -43,7 +44,7 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
     }
 
     public UserRepositoryDynamoDBSDK2HighLevelImpl(String tableName, String endpoint) {
-        final DynamoDbClient dynamoDbClient = DynamoDbClient.builder()
+        final var dynamoDbClient = DynamoDbClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .build();
         dynamoDbEnhancedClient = DynamoDbEnhancedClient.builder()
@@ -65,7 +66,7 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
         try {
             return MAPPER.enhancedUserToUser(userDynamoDbTable.updateItem(MAPPER.userToEnhancedUser(user)));
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
@@ -75,7 +76,7 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
             throw UserException.errorIdIsNull();
         }
         try {
-            final User item = userDynamoDbTable.getItem(Key.builder().partitionValue(id.toString()).build());
+            final var item = userDynamoDbTable.getItem(Key.builder().partitionValue(id.toString()).build());
             return Optional.ofNullable(item).map(MAPPER::enhancedUserToUser);
         } catch (Exception e) {
             log.error("Unable to retrieve data for id {}", id, e);
@@ -132,14 +133,14 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
                     .ignoreNulls(true)
                     .build());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
     @Override
     public void updateUserAdvanced(eu.luminis.breed.dynamodbmigration.user.model.User user) {
         try {
-            final User updatedUser = MAPPER.userToEnhancedUser(user);
+            final var updatedUser = MAPPER.userToEnhancedUser(user);
             userDynamoDbTable.updateItem(UpdateItemEnhancedRequest.builder(User.class)
                     .item(updatedUser)
                     .conditionExpression(Expression.builder()
@@ -149,9 +150,9 @@ public class UserRepositoryDynamoDBSDK2HighLevelImpl implements UserRepository {
                     .ignoreNulls(true)
                     .build());
         } catch (ConditionalCheckFailedException e) {
-            throw UserException.error("User could not be updated as the update condition failed for user with id {}", user.getId());
+            throw UserNotUpdatedException.errorConditionCheck(user.getId());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 

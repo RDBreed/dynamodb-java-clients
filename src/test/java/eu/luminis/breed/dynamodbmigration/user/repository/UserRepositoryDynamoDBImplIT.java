@@ -145,7 +145,7 @@ class UserRepositoryDynamoDBImplIT extends TestUtil {
 
     @ParameterizedTest
     @ArgumentsSource(RepositoryProvider.class)
-    void shouldNotUpdateUserAdvanced(UserRepository userRepository) {
+    void shouldNotUpdateUserDueModifiedTimeIsHigherThanActualTime(UserRepository userRepository) {
         TimeMachine.useFixedClockAt(LocalDateTime.MAX);
         final UUID id = createUser("first", "last", LocalDateTime.MIN);
         assertThatThrownBy(() -> userRepository.updateUserAdvanced(User.builder().id(id).firstName("second").build()))

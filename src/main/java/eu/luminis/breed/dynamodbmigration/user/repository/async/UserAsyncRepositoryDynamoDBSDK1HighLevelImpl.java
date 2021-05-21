@@ -1,9 +1,6 @@
 package eu.luminis.breed.dynamodbmigration.user.repository.async;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
@@ -25,8 +22,8 @@ public class UserAsyncRepositoryDynamoDBSDK1HighLevelImpl implements UserAsyncRe
     private final DynamoDBMapper dynamoDBMapper;
     private final String tableName;
 
-    public UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(String tableName){
-        final AmazonDynamoDB amazonDynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
+    public UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(String tableName) {
+        final var amazonDynamoDBClient = AmazonDynamoDBClientBuilder.defaultClient();
         this.tableName = tableName;
         this.dynamoDBMapper = new DynamoDBMapper(amazonDynamoDBClient, DynamoDBMapperConfig.builder()
                 .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(this.tableName))
@@ -34,7 +31,7 @@ public class UserAsyncRepositoryDynamoDBSDK1HighLevelImpl implements UserAsyncRe
     }
 
     public UserAsyncRepositoryDynamoDBSDK1HighLevelImpl(String tableName, String serviceEndpoint) {
-        final AmazonDynamoDB amazonDynamoDBClient = AmazonDynamoDBClientBuilder.standard()
+        final var amazonDynamoDBClient = AmazonDynamoDBClientBuilder.standard()
                 .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(serviceEndpoint, null))
                 .build();
         this.tableName = tableName;
@@ -52,7 +49,7 @@ public class UserAsyncRepositoryDynamoDBSDK1HighLevelImpl implements UserAsyncRe
         if (user.getId() == null) {
             user.setId(UUID.randomUUID());
         }
-        final User userMapper = MAPPER.userToMapperUser(user);
+        final var userMapper = MAPPER.userToMapperUser(user);
         return Mono.fromRunnable(() -> dynamoDBMapper.save(userMapper))
                 .thenReturn(MAPPER.mapperUserToUser(userMapper));
     }

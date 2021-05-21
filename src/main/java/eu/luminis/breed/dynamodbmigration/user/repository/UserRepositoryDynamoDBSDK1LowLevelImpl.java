@@ -14,10 +14,9 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
-import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import eu.luminis.breed.dynamodbmigration.user.domain.lowlevel.v1.UserMapper;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
+import eu.luminis.breed.dynamodbmigration.user.exception.UserNotUpdatedException;
 import eu.luminis.breed.dynamodbmigration.user.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -57,16 +56,16 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
             throw UserException.errorIdIsNull();
         }
         if (user.getId() == null) {
-            final UUID id = UUID.randomUUID();
+            final var id = UUID.randomUUID();
             log.info("Creating user with id: {}", id);
             user.setId(id);
         }
-        final PutItemRequest putItemRequest = new PutItemRequest(tableName, UserMapper.mapToItem(user, true));
+        final var putItemRequest = new PutItemRequest(tableName, UserMapper.mapToItem(user, true));
         try {
             amazonDynamoDBClient.putItem(putItemRequest);
             return user;
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
@@ -78,7 +77,7 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
         HashMap<String, AttributeValue> key = new HashMap<>();
         key.put(ID_FIELD, new AttributeValue(id.toString()));
 
-        GetItemRequest request = new GetItemRequest(tableName, key);
+        var request = new GetItemRequest(tableName, key);
 
         try {
             GetItemResult result = amazonDynamoDBClient.getItem(request);
@@ -96,7 +95,7 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
 
     @Override
     public List<User> findAll() {
-        ScanResult scanResult = amazonDynamoDBClient.scan(new ScanRequest(tableName));
+        var scanResult = amazonDynamoDBClient.scan(new ScanRequest(tableName));
         final List<User> allUsers = scanResult.getItems().stream().map(UserMapper::mapToUser).collect(Collectors.toList());
         while (scanResult.getLastEvaluatedKey() != null) {
             scanResult = amazonDynamoDBClient.scan(new ScanRequest(tableName).withExclusiveStartKey(scanResult.getLastEvaluatedKey()));
@@ -125,7 +124,7 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
 
     @Override
     public List<User> findByLastName(final String lastName) {
-        QueryRequest queryRequest = getLastNameIndexQuery(lastName);
+        var queryRequest = getLastNameIndexQuery(lastName);
         QueryResult result = amazonDynamoDBClient.query(queryRequest);
         final List<User> allUsers = result.getItems().stream().map(UserMapper::mapToUser).collect(Collectors.toList());
         while (result.getLastEvaluatedKey() != null) {
@@ -137,24 +136,24 @@ public class UserRepositoryDynamoDBSDK1LowLevelImpl implements UserRepository {
 
     @Override
     public void updateUser(final User user) {
-        final UpdateItemRequest updateItemRequest = UserMapper.updateItemRequest(user, tableName);
+        final var updateItemRequest = UserMapper.updateItemRequest(user, tableName);
         try {
             amazonDynamoDBClient.updateItem(updateItemRequest);
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
     @Override
     public void updateUserAdvanced(final User user) {
-        final UpdateItemRequest updateItemRequest = UserMapper.updateItemRequest(user, tableName);
+        final var updateItemRequest = UserMapper.updateItemRequest(user, tableName);
         updateItemRequest.withConditionExpression(LAST_MODIFIED_EXPRESSION);
         try {
             amazonDynamoDBClient.updateItem(updateItemRequest);
         } catch (ConditionalCheckFailedException e) {
-            throw UserException.error("User could not be updated as the update condition failed for user with id {}", user.getId());
+            throw UserNotUpdatedException.errorConditionCheck(user.getId());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 

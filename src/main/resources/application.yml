@@ -1,0 +1,16 @@
+spring:
+  profiles:
+    active: local
+cloud:
+  aws:
+    region:
+      static: eu-west-1
+    credentials:
+      access-key: key
+      secret-key: secret
+    dynamodb:
+      endpoint: http://localhost
+      port: 4566
+      tablename:
+        user: user
+

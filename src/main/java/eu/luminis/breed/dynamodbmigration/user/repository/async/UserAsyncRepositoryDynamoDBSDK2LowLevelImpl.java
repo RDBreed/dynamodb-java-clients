@@ -6,9 +6,6 @@ import eu.luminis.breed.dynamodbmigration.user.model.User;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.DeleteItemRequest;
@@ -33,7 +30,7 @@ public class UserAsyncRepositoryDynamoDBSDK2LowLevelImpl implements UserAsyncRep
     private final DynamoDbAsyncClient dynamoDbAsyncClient;
     private final String tableName;
 
-    public UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(String tableName){
+    public UserAsyncRepositoryDynamoDBSDK2LowLevelImpl(String tableName) {
         this.dynamoDbAsyncClient = DynamoDbAsyncClient.create();
         this.tableName = tableName;
     }

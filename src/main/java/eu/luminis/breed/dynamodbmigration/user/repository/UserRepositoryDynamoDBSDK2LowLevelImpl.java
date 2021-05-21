@@ -2,6 +2,7 @@ package eu.luminis.breed.dynamodbmigration.user.repository;
 
 import eu.luminis.breed.dynamodbmigration.user.domain.lowlevel.v2.UserMapper;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
+import eu.luminis.breed.dynamodbmigration.user.exception.UserNotUpdatedException;
 import eu.luminis.breed.dynamodbmigration.user.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
@@ -83,7 +84,7 @@ public class UserRepositoryDynamoDBSDK2LowLevelImpl implements UserRepository {
         final List<User> allUsers = scan.items().stream().map(UserMapper::mapToUser).collect(Collectors.toList());
         while (scan.hasLastEvaluatedKey()) {
             scan = dynamoDbClient.scan(ScanRequest.builder().tableName(tableName).exclusiveStartKey(scan.lastEvaluatedKey()).build());
-//            scan.items().stream().map(UserMapper::mapToUser).forEach(allUsers::add);
+            scan.items().stream().map(UserMapper::mapToUser).forEach(allUsers::add);
         }
         return allUsers;
     }
@@ -128,7 +129,7 @@ public class UserRepositoryDynamoDBSDK2LowLevelImpl implements UserRepository {
                     .attributeUpdates(UserMapper.attributeValueUpdates(user))
                     .build());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
@@ -150,9 +151,9 @@ public class UserRepositoryDynamoDBSDK2LowLevelImpl implements UserRepository {
                     .conditionExpression(LAST_MODIFIED_EXPRESSION)
                     .build());
         } catch (ConditionalCheckFailedException e) {
-            throw UserException.error("User could not be updated as the update condition failed for user with id {}", user.getId());
+            throw UserNotUpdatedException.errorConditionCheck(user.getId());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 

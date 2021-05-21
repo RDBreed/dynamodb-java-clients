@@ -5,7 +5,10 @@ import java.util.Arrays;
 
 public class UserException extends RuntimeException {
 
-    private final boolean isClientError;
+    private boolean isClientError = false;
+
+    protected UserException() {
+    }
 
     public static UserException error(String message, Object... args) {
         Object[] replacingObjects;
@@ -53,8 +56,8 @@ public class UserException extends RuntimeException {
 
     private static String formatString(String originalMessage, Object... replacingObjects) {
         if(replacingObjects != null && replacingObjects.length > 0) {
-            String stringToReturn = originalMessage;
-            for (int i = 0; i < replacingObjects.length; i++) {
+            var stringToReturn = originalMessage;
+            for (var i = 0; i < replacingObjects.length; i++) {
                 stringToReturn = originalMessage.replaceFirst("\\{}", "{" + i + "}");
             }
             return MessageFormat.format(stringToReturn, replacingObjects);

@@ -9,10 +9,10 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.KeyPair;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import eu.luminis.breed.dynamodbmigration.user.domain.highlevel.dynamodbmapper.User;
 import eu.luminis.breed.dynamodbmigration.user.domain.lowlevel.v1.UserMapper;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
+import eu.luminis.breed.dynamodbmigration.user.exception.UserNotUpdatedException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -62,11 +62,11 @@ public class UserRepositoryDynamoDBSDK1HighLevelImpl implements UserRepository {
             throw UserException.errorIdIsNull();
         }
         try {
-            final User userMapper = MAPPER.userToMapperUser(user);
+            final var userMapper = MAPPER.userToMapperUser(user);
             dynamoDBMapper.save(userMapper);
             return MAPPER.mapperUserToUser(userMapper);
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
@@ -76,7 +76,7 @@ public class UserRepositoryDynamoDBSDK1HighLevelImpl implements UserRepository {
             throw UserException.errorIdIsNull();
         }
         try {
-            final User userMapper = dynamoDBMapper.load(User.class, id);
+            final var userMapper = dynamoDBMapper.load(User.class, id);
             return Optional.ofNullable(userMapper).map(MAPPER::mapperUserToUser);
         } catch (Exception e) {
             log.error("Unable to retrieve data for id {}", id, e);
@@ -123,21 +123,21 @@ public class UserRepositoryDynamoDBSDK1HighLevelImpl implements UserRepository {
                             .withTableNameOverride(new DynamoDBMapperConfig.TableNameOverride(this.tableName))
                             .withSaveBehavior(DynamoDBMapperConfig.SaveBehavior.UPDATE_SKIP_NULL_ATTRIBUTES).build());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 
     //Not possible with mapper; see https://github.com/aws/aws-sdk-java/issues/534
     @Override
     public void updateUserAdvanced(final eu.luminis.breed.dynamodbmigration.user.model.User user) {
-        final UpdateItemRequest updateItemRequest = UserMapper.updateItemRequest(user, tableName);
+        final var updateItemRequest = UserMapper.updateItemRequest(user, tableName);
         updateItemRequest.withConditionExpression(LAST_MODIFIED_EXPRESSION);
         try {
             amazonDynamoDB.updateItem(updateItemRequest);
         } catch (ConditionalCheckFailedException e) {
-            throw UserException.error("User could not be updated as the update condition failed for user with id {}", user.getId());
+            throw UserNotUpdatedException.errorConditionCheck(user.getId());
         } catch (Exception e) {
-            throw UserException.error("Something went wrong when trying to update user with id {}", user.getId(), e);
+            throw UserNotUpdatedException.error(user.getId(), e);
         }
     }
 

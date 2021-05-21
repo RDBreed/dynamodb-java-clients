@@ -1,0 +1,6 @@
+version: '2' # version is needed for maven docker plugin...
+
+services:
+  localstack:
+    ports:
+      - "4566:4566"

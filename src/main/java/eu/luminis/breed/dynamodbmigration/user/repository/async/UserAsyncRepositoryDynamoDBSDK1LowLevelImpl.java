@@ -1,7 +1,5 @@
 package eu.luminis.breed.dynamodbmigration.user.repository.async;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -54,7 +52,7 @@ public class UserAsyncRepositoryDynamoDBSDK1LowLevelImpl implements UserAsyncRep
             throw UserException.errorIdIsNull();
         }
         if (user.getId() == null) {
-            final UUID id = UUID.randomUUID();
+            final var id = UUID.randomUUID();
             log.info("Creating user with id: {}", id);
             user.setId(id);
         }

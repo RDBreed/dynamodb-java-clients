@@ -5,8 +5,6 @@ import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
@@ -16,7 +14,6 @@ import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.UpdateItemEnhancedRequest;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
 import java.net.URI;
@@ -30,8 +27,8 @@ public class UserAsyncRepositoryDynamoDBSDK2HighLevelImpl implements UserAsyncRe
     private final DynamoDbAsyncTable<User> userDynamoDbAsyncTable;
     private final DynamoDbAsyncIndex<User> userDynamoDbAsyncIndex;
 
-    public UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(String tableName){
-        DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.create();
+    public UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(String tableName) {
+        var dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.create();
         userDynamoDbAsyncTable = dynamoDbEnhancedAsyncClient.table(tableName, TableSchema.fromBean(User.class));
         userDynamoDbAsyncIndex = userDynamoDbAsyncTable.index("lastNameIndex");
     }
@@ -40,7 +37,7 @@ public class UserAsyncRepositoryDynamoDBSDK2HighLevelImpl implements UserAsyncRe
         final DynamoDbAsyncClient dynamoDbClient = DynamoDbAsyncClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .build();
-        DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.builder()
+        var dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.builder()
                 .dynamoDbClient(dynamoDbClient)
                 .build();
         userDynamoDbAsyncTable = dynamoDbEnhancedAsyncClient.table(tableName, TableSchema.fromBean(User.class));
