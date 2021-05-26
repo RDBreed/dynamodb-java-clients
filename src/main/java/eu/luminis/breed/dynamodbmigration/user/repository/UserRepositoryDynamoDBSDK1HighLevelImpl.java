@@ -98,7 +98,8 @@ public class UserRepositoryDynamoDBSDK1HighLevelImpl implements UserRepository {
         final List<Object> usersMapper = dynamoDBMapper.batchLoad(Map.of(User.class, keyPairs)).get(tableName);
         return usersMapper
                 .stream()
-                .map((Object user) -> MAPPER.mapperUserToUser((User) user))
+                .map(User.class::cast)
+                .map(MAPPER::mapperUserToUser)
                 .collect(Collectors.toList());
     }
 

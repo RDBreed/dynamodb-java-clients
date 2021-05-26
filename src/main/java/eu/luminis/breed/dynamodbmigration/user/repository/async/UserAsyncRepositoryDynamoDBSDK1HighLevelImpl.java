@@ -6,13 +6,17 @@ import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapperConfig;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.KeyPair;
 import eu.luminis.breed.dynamodbmigration.user.domain.highlevel.dynamodbmapper.User;
 import eu.luminis.breed.dynamodbmigration.user.exception.UserException;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static eu.luminis.breed.dynamodbmigration.user.domain.highlevel.dynamodbmapper.UserMapper.MAPPER;
 
@@ -67,6 +71,14 @@ public class UserAsyncRepositoryDynamoDBSDK1HighLevelImpl implements UserAsyncRe
     @Override
     public Flux<eu.luminis.breed.dynamodbmigration.user.model.User> findAll() {
         return Flux.fromIterable(dynamoDBMapper.scan(User.class, new DynamoDBScanExpression()))
+                .map(MAPPER::mapperUserToUser);
+    }
+
+    @Override
+    public Flux<eu.luminis.breed.dynamodbmigration.user.model.User> findByIds(List<UUID> ids) {
+        final List<KeyPair> keyPairs = ids.stream().map(id -> new KeyPair().withHashKey(id)).collect(Collectors.toList());
+        return Flux.fromIterable(dynamoDBMapper.batchLoad(Map.of(User.class, keyPairs)).get(tableName))
+                .map(User.class::cast)
                 .map(MAPPER::mapperUserToUser);
     }
 

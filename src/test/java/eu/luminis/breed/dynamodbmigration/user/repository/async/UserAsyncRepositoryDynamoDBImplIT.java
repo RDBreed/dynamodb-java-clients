@@ -6,13 +6,7 @@ import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import eu.luminis.breed.dynamodbmigration.TestUtil;
 import eu.luminis.breed.dynamodbmigration.user.model.Address;
 import eu.luminis.breed.dynamodbmigration.user.model.Education;
-import eu.luminis.breed.dynamodbmigration.user.model.Gender;
 import eu.luminis.breed.dynamodbmigration.user.model.User;
-import eu.luminis.breed.dynamodbmigration.user.repository.UserRepository;
-import eu.luminis.breed.dynamodbmigration.user.repository.UserRepositoryDynamoDBSDK1HighLevelImpl;
-import eu.luminis.breed.dynamodbmigration.user.repository.UserRepositoryDynamoDBSDK1LowLevelImpl;
-import eu.luminis.breed.dynamodbmigration.user.repository.UserRepositoryDynamoDBSDK2HighLevelImpl;
-import eu.luminis.breed.dynamodbmigration.user.repository.UserRepositoryDynamoDBSDK2LowLevelImpl;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -24,12 +18,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.*;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ADDRESS_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ADDRESS_NUMBER_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ADDRESS_STREET_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ADDRESS_ZIPCODE_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.FIRST_NAME_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.ID_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.IS_ADMIN_FIELD;
+import static eu.luminis.breed.dynamodbmigration.user.domain.UserFields.LAST_NAME_FIELD;
 import static eu.luminis.breed.dynamodbmigration.user.model.Gender.FEMALE;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -47,7 +46,7 @@ class UserAsyncRepositoryDynamoDBImplIT extends TestUtil {
                         .isAdmin(false)
                         .education(Education.builder().primarySchool(Address.builder().number(1).street("Schoolstreet").zipCode("4444").build()).build())
                         .address(Address.builder().street("Mainstreet").build()).build()))
-                .assertNext(user ->  assertThat(user).isNotNull()
+                .assertNext(user -> assertThat(user).isNotNull()
                         .extracting(
                                 User::getFirstName,
                                 User::getAge,
@@ -69,10 +68,10 @@ class UserAsyncRepositoryDynamoDBImplIT extends TestUtil {
         final UUID id = createUser("firstName", "lastName");
         StepVerifier
                 .create(userRepository.getUserById(id))
-                .assertNext(user ->  assertThat(user).isNotNull()
+                .assertNext(user -> assertThat(user).isNotNull()
                         .extracting(
                                 User::getId)
-                .isEqualTo(id))
+                        .isEqualTo(id))
                 .verifyComplete();
     }
 
@@ -85,6 +84,25 @@ class UserAsyncRepositoryDynamoDBImplIT extends TestUtil {
         }
         StepVerifier
                 .create(userRepository.findAll())
+                .recordWith(ArrayList::new)
+                .thenConsumeWhile(x -> true)
+                .consumeRecordedWith(users -> {
+                    assertThat(users.stream()
+                            .filter(user -> firstName.equals(user.getFirstName()))).hasSize(50);
+                })
+                .verifyComplete();
+    }
+
+    @ParameterizedTest
+    @ArgumentsSource(RepositoryProvider.class)
+    void shouldFindByIds(UserAsyncRepository userRepository) {
+        final List<UUID> ids = new ArrayList<>();
+        final String firstName = UUID.randomUUID().toString();
+        for (int i = 0; i < 50; i++) {
+            ids.add(createUser(firstName, "lastname"));
+        }
+        StepVerifier
+                .create(userRepository.findByIds(ids))
                 .recordWith(ArrayList::new)
                 .thenConsumeWhile(x -> true)
                 .consumeRecordedWith(users -> {

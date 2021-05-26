@@ -10,13 +10,16 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.BatchGetItemEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.ReadBatch;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.UpdateItemEnhancedRequest;
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 import static eu.luminis.breed.dynamodbmigration.user.domain.highlevel.enhancedddb.UserMapper.MAPPER;
@@ -26,9 +29,10 @@ public class UserAsyncRepositoryDynamoDBSDK2HighLevelImpl implements UserAsyncRe
 
     private final DynamoDbAsyncTable<User> userDynamoDbAsyncTable;
     private final DynamoDbAsyncIndex<User> userDynamoDbAsyncIndex;
+    private final DynamoDbEnhancedAsyncClient dynamoDbEnhancedAsyncClient;
 
     public UserAsyncRepositoryDynamoDBSDK2HighLevelImpl(String tableName) {
-        var dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.create();
+        dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.create();
         userDynamoDbAsyncTable = dynamoDbEnhancedAsyncClient.table(tableName, TableSchema.fromBean(User.class));
         userDynamoDbAsyncIndex = userDynamoDbAsyncTable.index("lastNameIndex");
     }
@@ -37,7 +41,7 @@ public class UserAsyncRepositoryDynamoDBSDK2HighLevelImpl implements UserAsyncRe
         final DynamoDbAsyncClient dynamoDbClient = DynamoDbAsyncClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .build();
-        var dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.builder()
+        this.dynamoDbEnhancedAsyncClient = DynamoDbEnhancedAsyncClient.builder()
                 .dynamoDbClient(dynamoDbClient)
                 .build();
         userDynamoDbAsyncTable = dynamoDbEnhancedAsyncClient.table(tableName, TableSchema.fromBean(User.class));
@@ -69,6 +73,23 @@ public class UserAsyncRepositoryDynamoDBSDK2HighLevelImpl implements UserAsyncRe
         return Flux.from(userDynamoDbAsyncTable.scan(ScanEnhancedRequest.builder().build()))
                 .map(Page::items)
                 .flatMapIterable(enhancedUsers -> enhancedUsers)
+                .map(MAPPER::enhancedUserToUser);
+    }
+
+    @Override
+    public Flux<eu.luminis.breed.dynamodbmigration.user.model.User> findByIds(List<UUID> ids) {
+        final ReadBatch.Builder<User> readBatchBuilder = ReadBatch.builder(User.class)
+                .mappedTableResource(userDynamoDbAsyncTable);
+        ids
+                .stream()
+                .map(uuid -> Key.builder()
+                        .partitionValue(uuid.toString())
+                        .build())
+                .forEach(readBatchBuilder::addGetItem);
+        return Flux.from(dynamoDbEnhancedAsyncClient.batchGetItem(BatchGetItemEnhancedRequest.builder()
+                .addReadBatch(readBatchBuilder.build()).build()))
+                .map(batchGetResultPage -> batchGetResultPage.resultsForTable(userDynamoDbAsyncTable))
+                .flatMapIterable(users -> users)
                 .map(MAPPER::enhancedUserToUser);
     }
 

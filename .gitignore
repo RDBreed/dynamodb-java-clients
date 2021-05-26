@@ -1,6 +1,6 @@
 HELP.md
 target/
-!.mvn/wrapper/maven-wrapper.jar
+#!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
@@ -31,9 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
-/mvnw.cmd
-/.mvn/wrapper/maven-wrapper.jar
-/.mvn/wrapper/maven-wrapper.properties
-/.mvn/wrapper/MavenWrapperDownloader.java
-/mvnw
+#/mvnw.cmd
+#/.mvn/wrapper/maven-wrapper.jar
+#/.mvn/wrapper/maven-wrapper.properties
+#/.mvn/wrapper/MavenWrapperDownloader.java
+#/mvnw
 /cdk/package-lock.json
